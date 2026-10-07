@@ -19,6 +19,8 @@
 
 ## 專案結構
 
+街頭選戰介面另有 `js/ui.js`（呈現與操作介面）、`js/visuals.js`（純視覺座標／色彩）與 `assets/ballot.svg`（投票箱標誌）。設計方向與驗證範圍見 `docs/VISUAL_DESIGN.md`。
+
 ```text
 candidate-game/
 ├─ index.html
@@ -81,7 +83,7 @@ $env:SMOKE_BROWSER_CHANNEL = 'msedge'
 npm test
 ```
 
-可用 `SMOKE_BROWSER_PATH` 指定瀏覽器執行檔。測試以真實無頭瀏覽器開啟本機 HTML，驗證載入與資料結構，並以固定種子逐步比對拆檔版和 legacy 的完整遊戲。下一個 PR 的拆分計畫見 `docs/REFACTOR_PLAN.md`。
+可用 `SMOKE_BROWSER_PATH` 指定瀏覽器執行檔。測試以真實無頭瀏覽器開啟本機 HTML，驗證載入與資料結構，並以固定種子逐步比對拆檔版和 legacy 的完整遊戲狀態及提示語意。另以五種螢幕寬度驗證新地圖與操作介面；UI/CSS 不要求與舊版相同。後續規則層拆分計畫見 `docs/REFACTOR_PLAN.md`。
 
 ## 下一階段工作
 

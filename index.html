@@ -1,83 +1,66 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>候選人！Alpha 0.4</title>
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#192d35">
+  <meta name="description" content="走進街區，選擇你的競選路線。《候選人！》是六名虛構候選人的單機策略桌遊。">
+  <title>候選人！｜街頭競選策略桌遊</title>
+  <link rel="icon" href="assets/ballot.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css?v=street-01">
 </head>
 <body>
+<a class="skip-link" href="#campaignMap">跳到競選地圖</a>
+<header class="topbar">
+  <a class="brand" href="./" aria-label="候選人！首頁"><img src="assets/ballot.svg" alt="" width="40" height="40"><span>候選人<span class="brand-mark">！</span><small>CAMPAIGN BOARD GAME</small></span></a>
+  <div class="header-meta"><span class="online-dot"></span> 單機選戰 · 你 + 5 名 AI <span class="version">ALPHA 0.42</span></div>
+  <button id="helpBtn" class="text-button">怎麼玩 ↗</button>
+</header>
 <div class="wrap">
-  <div class="topbar">
-    <div>
-      <h1>🎲《候選人！》Alpha 0.4</h1>
-      <div class="subtitle">虛構候選人競選策略原型｜擲骰、分岔、議題、空軍／陸軍／政策／攻擊</div>
-    </div>
-    <div class="small">單機：你 + 5 名 AI｜Alpha 0.42｜Codex handoff build</div>
-  </div>
-
+  <section class="hero" aria-label="遊戲介紹">
+    <div><p class="eyebrow">一座小城，六種主張。</p><h1>每一條街，<br class="mobile-break">都有一張選票<span>。</span></h1><p class="hero-copy">走進街區、選擇路線，把你的主張變成支持。</p></div>
+    <div class="hero-stamp" aria-hidden="true"><span>你的下一步</span><strong>改變選戰</strong><small>48 節點 / 5 次選路</small></div>
+  </section>
   <div class="layout">
-    <section class="panel">
-      <h3 class="section-title">1. 選擇候選人</h3>
+    <section class="panel candidate-panel" aria-label="候選人與資源">
+      <div class="section-heading"><h2 id="candidateHeading">你的候選人</h2><span class="eyebrow">01 / 人選</span></div>
+      <p class="small selection-hint">選一位代表你走進這座城市。</p>
       <div id="candidateGrid" class="candidate-grid"></div>
+      <div class="start-controls"><button id="startBtn" class="primary">開始我的選戰 <span aria-hidden="true">→</span></button><button id="resetBtn" class="text-button">重新開始</button></div>
       <div id="playerCard"></div>
-      <div class="controls">
-        <button id="startBtn" class="primary">開始選戰</button>
-        <button id="resetBtn" class="secondary">重新開始</button>
-      </div>
-      <hr style="border-color:#334155;margin:14px 0">
-      <div id="turnPanel">
-        <h3 class="section-title">本回合</h3>
-        <div class="small" id="turnInfo">尚未開始</div>
-        <div class="controls">
-          <button id="rollBtn" class="primary" disabled>🎲 擲骰</button>
-          <button id="endTurnBtn" class="secondary" disabled>結束回合</button>
-        </div>
-      </div>
-      <div style="margin-top:14px">
-        <h3 class="section-title">競選行動（每回合 3 點）</h3>
-        <div id="actions" class="actions"></div>
-      </div>
+      <div class="candidate-note">所有人物與背景皆為虛構。<br>最先到投票日，並不代表獲勝。</div>
     </section>
-
-    <main class="panel">
-      <div class="current-issue">
-        📰 當前社會議題：<strong id="issueText">尚未形成焦點</strong> <span id="issueHeat"></span>
-        <div class="small" id="issueDesc">棋盤中段會抽出公共議題，改變策略與停留格收益；單一議題共鳴最高 ×1.50。</div>
-        <div id="issueEffects" class="issue-effects"><span class="issue-chip">目前尚無策略加成</span></div>
-      </div>
-      <h3 class="section-title">2. 競選棋盤（48 節點）</h3><div class="small" style="margin-bottom:8px">一般路線格只有「停下來」才取得完整效果；重大時間軸事件即使經過也會觸發。</div>
-      <div id="board" class="board"></div>
+    <main id="campaignMap" class="panel map-panel">
+      <div class="section-heading"><div><p class="eyebrow">02 / 街區路線</p><h2>競選地圖</h2></div><button id="focusBtn" class="map-focus">◎ 我的位置</button></div>
+      <div class="map-caption"><span>從宣布參選，到投票日。</span><span class="map-count">48 站</span></div>
+      <nav id="stageNav" class="stage-nav" aria-label="瀏覽選戰階段"></nav>
+      <div class="map-legend"><span><i class="legend-dot me"></i>你的位置</span><span><i class="legend-dot next"></i>下一站</span><span><i class="legend-dot event"></i>重大事件</span><span>沿箭頭前進 ↓</span></div>
+      <div id="board" class="board" tabindex="0" aria-label="競選路線圖，可上下捲動"></div>
+      <div id="mapLocation" class="map-location">準備出發 · 宣布參選</div>
+      <p class="map-rule">路線格停留才獲得收益；重大時間軸事件經過也會觸發。</p>
     </main>
-
-    <aside class="panel right">
-      <h3 class="section-title">即時戰況</h3>
-      <div id="ranking" class="rank"></div>
-      <h3 class="section-title" style="margin-top:14px">事件紀錄</h3>
-      <div id="log" class="log"></div>
+    <aside class="intel-column" aria-label="選戰情報">
+      <section class="panel current-issue"><div class="section-heading"><h2>街頭焦點</h2><span class="news-label">即時議題</span></div><strong id="issueText">尚未形成焦點</strong><span id="issueHeat"></span><p class="small" id="issueDesc">棋盤中段會抽出公共議題，改變策略與停留格收益；單一議題共鳴最高 ×1.50。</p><div id="issueEffects" class="issue-effects"><span class="issue-chip">目前尚無策略加成</span></div></section>
+      <section class="panel ranking-panel"><div class="section-heading"><h2>即時戰況</h2><span class="eyebrow">支持度</span></div><div id="ranking" class="rank"><p class="empty-state">選戰即將開始。<br>誰能贏得這座城市？</p></div><p class="small rank-note">支持度是基礎，投票日才揭曉勝負。</p></section>
+      <section class="panel log-panel"><div class="section-heading"><h2>選戰紀事</h2><span class="eyebrow">LIVE</span></div><div id="log" class="log" role="log" aria-label="遊戲事件紀錄"></div></section>
     </aside>
+    <section class="panel action-panel" id="actionPanel" aria-label="競選行動">
+      <div class="section-heading"><div><p class="eyebrow">03 / 採取行動</p><h2>把每一步，變成影響力。</h2></div><span class="action-ap" id="actionAp">每回合 3 AP</span></div>
+      <div class="action-guide"><span>先擲骰移動，再安排競選行動。</span><span>空軍 / 陸軍 / 政策 / 攻擊</span></div>
+      <div id="actions" class="actions"></div>
+    </section>
   </div>
+  <footer class="page-footer"><span>候選人！ / 街頭競選策略桌遊</span><span>六名虛構候選人，一場你的選戰。</span></footer>
 </div>
-
-<div id="routeModal" class="modal-backdrop">
-  <div class="modal">
-    <h2 id="routeTitle">選擇路線</h2>
-    <p class="small" id="routePrompt"></p>
-    <div id="routeChoices" class="route-choices"></div>
-  </div>
-</div>
-
-<div id="resultModal" class="modal-backdrop">
-  <div class="modal">
-    <h2>🗳️ 投票日結果</h2>
-    <div id="finalResults"></div>
-    <div class="controls"><button class="primary" onclick="location.reload()">再玩一局</button></div>
-  </div>
-</div>
-
-<!-- 保持 classic script 與此載入順序：三個檔案共用全域 lexical scope。 -->
+<section id="turnPanel" class="turn-dock" aria-label="本回合操作"><div class="dock-inner"><div class="turn-status"><span class="eyebrow" id="phaseLabel">準備選戰</span><div id="turnInfo" aria-live="polite">選擇候選人，開始你的選戰。</div></div><div class="dock-controls"><button id="rollBtn" class="primary" disabled><span aria-hidden="true">⚄</span> 擲骰前進</button><button id="actionsJump" class="secondary">競選行動</button><button id="endTurnBtn" class="secondary" disabled>結束回合 →</button></div></div></section>
+<div id="routeModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="routeTitle"><div class="modal route-modal"><p class="eyebrow">路口到了 / 選擇你的方向</p><h2 id="routeTitle">選擇路線</h2><p class="small" id="routePrompt"></p><div id="routeChoices" class="route-choices"></div><p class="modal-footnote">選路後會繼續完成這次擲骰的剩餘步數。</p></div></div>
+<div id="resultModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="resultTitle"><div class="modal result-modal"><p class="eyebrow">開票完成 / THE PEOPLE HAVE SPOKEN</p><h2 id="resultTitle">投票日結果</h2><div id="finalResults"></div><div class="controls"><button class="primary" onclick="location.reload()">再走一段選戰路 →</button></div></div></div>
+<dialog id="helpDialog" class="help-dialog"><div class="section-heading"><h2>一場選戰，怎麼開始？</h2><button id="closeHelp" class="text-button" aria-label="關閉遊戲說明">✕</button></div><ol class="help-steps"><li><b>選一名候選人</b><p>六名角色各有空軍、陸軍、政策與攻擊專長。</p></li><li><b>擲骰，走進街區</b><p>D6 決定步數。抵達分岔時，選擇下一段路線。</p></li><li><b>安排你的行動</b><p>每回合通常有 3 AP；部分重大節點會增加 AP。行動可能需要資金，成功與否由擲骰和能力決定。</p></li><li><b>看議題，也看對手</b><p>議題會影響策略收益；連續使用同類策略會疲勞。結束回合後，五名 AI 會行動。</p></li><li><b>投票日，揭曉結果</b><p>第一位抵達終點會啟動最後一輪。支持度、聲量、組織、信任、動員、議題、爭議與 D6 共同決定結果。</p></li></ol><button id="helpDone" class="primary">準備好了</button></dialog>
+<!-- Classic scripts share lexical scope; UI is defined before runtime initialization. -->
 <script src="js/data.js"></script>
 <script src="js/board.js"></script>
-<script src="js/game.js"></script>
+<script src="js/visuals.js?v=street-01"></script>
+<script src="js/ui.js?v=street-01"></script>
+<script src="js/game.js?v=street-01"></script>
 </body>
 </html>
