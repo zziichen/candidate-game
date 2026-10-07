@@ -22,14 +22,17 @@ async function main() {
   const index = read('index.html');
   const legacyScript = legacy.match(/<script>([\s\S]*?)<\/script>/)[1];
   const splitScript = ['js/data.js', 'js/board.js', 'js/game.js'].map(read).join('\n');
-  assert.deepEqual(declarations(splitScript), declarations(legacyScript), 'All data, rules, AI and UI declarations match legacy');
+  // Presentation is intentionally redesigned; keep every other declaration
+  // byte-equivalent (apart from blank lines) to the immutable Alpha baseline.
+  const presentation = new Set(['showRouteModal','renderCandidates','showCandidate','renderPlayerCard','renderIssuePanel','renderActions','renderRanking','tokensAt','nodeHtml','renderBoard','renderTurn','render','addLog']);
+  const rulesOnly = source => Object.fromEntries(Object.entries(declarations(source)).filter(([name]) => !presentation.has(name)));
+  assert.deepEqual(rulesOnly(splitScript), rulesOnly(legacyScript), 'All data, rules, AI and turn-flow declarations match legacy');
   assert.equal(splitScript.slice(splitScript.indexOf('document.getElementById("startBtn")')).trim(),
     legacyScript.slice(legacyScript.indexOf('document.getElementById("startBtn")')).trim(), 'Initialization matches legacy');
-  assert.equal(read('css/style.css').trim(), legacy.match(/<style>([\s\S]*?)<\/style>/)[1].trim());
-  const scripts = [...index.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]);
-  assert.deepEqual(scripts, ['js/data.js', 'js/board.js', 'js/game.js']);
+  const scripts = [...index.matchAll(/<script src="([^"]+)"/g)].map(m => m[1].split('?')[0]);
+  assert.deepEqual(scripts, ['js/data.js', 'js/board.js', 'js/visuals.js', 'js/ui.js', 'js/game.js']);
   assert(!/<script[^>]*(?:async|defer|type=)/.test(index), 'Classic synchronous scripts preserve shared lexical scope');
-  console.log('PASS: legacy declarations, initialization, CSS and load order');
+  console.log('PASS: unchanged legacy data, rules, AI, turn flow, initialization and load order');
 
   const browser = await chromium.launch(process.env.SMOKE_BROWSER_PATH
     ? { executablePath: process.env.SMOKE_BROWSER_PATH }
@@ -73,8 +76,8 @@ async function main() {
           const trace = await page.evaluate(({ candidate, branch }) => {
             if (game.human.id !== candidateTemplates[candidate].id || game.players.filter(p => !p.isHuman).length !== 5) throw Error('Invalid players');
             const snapshots = [];
-            const snapshot = () => snapshots.push(JSON.stringify({ game, logs: document.getElementById('log').innerText,
-              issue: document.getElementById('issueEffects').innerHTML, actions: document.getElementById('actions').innerHTML,
+            const snapshot = () => snapshots.push(JSON.stringify({ game, logs: [...document.getElementById('log').children].map(row => row.textContent),
+              issue: document.getElementById('issueEffects').textContent, actions: [...document.getElementById('actions').children].map(b => ({name:b.querySelector('b').textContent,notes:[...b.querySelectorAll('.action-bonus,.action-risk')].map(n=>n.textContent)})),
               result: document.getElementById('finalResults').innerHTML }));
             const gates = new Set();
             snapshot();
@@ -111,7 +114,7 @@ async function main() {
           await page.close();
           games++;
         }
-        assert.deepEqual(traces[0], traces[1], `Candidate ${candidate}, branch ${branch}: every state, log, issue/action UI and result matches legacy`);
+        assert.deepEqual(traces[0], traces[1], `Candidate ${candidate}, branch ${branch}: every state, log, issue/action semantics and result matches legacy`);
       }
     }
     // Force each gate individually; normal games can finish before the human
