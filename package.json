@@ -1,6 +1,6 @@
 {
   "name": "candidate-game-alpha042",
   "private": true,
-  "scripts": { "test": "node tests/smoke.cjs" },
+  "scripts": { "test": "node tests/smoke.cjs && node tests/layout.cjs" },
   "devDependencies": { "playwright": "1.62.1" }
 }
