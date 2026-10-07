@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>候選人！Alpha 0.4</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1>🎲《候選人！》Alpha 0.4</h1>
+      <div class="subtitle">虛構候選人競選策略原型｜擲骰、分岔、議題、空軍／陸軍／政策／攻擊</div>
+    </div>
+    <div class="small">單機：你 + 5 名 AI｜Alpha 0.42｜Codex handoff build</div>
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <h3 class="section-title">1. 選擇候選人</h3>
+      <div id="candidateGrid" class="candidate-grid"></div>
+      <div id="playerCard"></div>
+      <div class="controls">
+        <button id="startBtn" class="primary">開始選戰</button>
+        <button id="resetBtn" class="secondary">重新開始</button>
+      </div>
+      <hr style="border-color:#334155;margin:14px 0">
+      <div id="turnPanel">
+        <h3 class="section-title">本回合</h3>
+        <div class="small" id="turnInfo">尚未開始</div>
+        <div class="controls">
+          <button id="rollBtn" class="primary" disabled>🎲 擲骰</button>
+          <button id="endTurnBtn" class="secondary" disabled>結束回合</button>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <h3 class="section-title">競選行動（每回合 3 點）</h3>
+        <div id="actions" class="actions"></div>
+      </div>
+    </section>
+
+    <main class="panel">
+      <div class="current-issue">
+        📰 當前社會議題：<strong id="issueText">尚未形成焦點</strong> <span id="issueHeat"></span>
+        <div class="small" id="issueDesc">棋盤中段會抽出公共議題，改變策略與停留格收益；單一議題共鳴最高 ×1.50。</div>
+        <div id="issueEffects" class="issue-effects"><span class="issue-chip">目前尚無策略加成</span></div>
+      </div>
+      <h3 class="section-title">2. 競選棋盤（48 節點）</h3><div class="small" style="margin-bottom:8px">一般路線格只有「停下來」才取得完整效果；重大時間軸事件即使經過也會觸發。</div>
+      <div id="board" class="board"></div>
+    </main>
+
+    <aside class="panel right">
+      <h3 class="section-title">即時戰況</h3>
+      <div id="ranking" class="rank"></div>
+      <h3 class="section-title" style="margin-top:14px">事件紀錄</h3>
+      <div id="log" class="log"></div>
+    </aside>
+  </div>
+</div>
+
+<div id="routeModal" class="modal-backdrop">
+  <div class="modal">
+    <h2 id="routeTitle">選擇路線</h2>
+    <p class="small" id="routePrompt"></p>
+    <div id="routeChoices" class="route-choices"></div>
+  </div>
+</div>
+
+<div id="resultModal" class="modal-backdrop">
+  <div class="modal">
+    <h2>🗳️ 投票日結果</h2>
+    <div id="finalResults"></div>
+    <div class="controls"><button class="primary" onclick="location.reload()">再玩一局</button></div>
+  </div>
+</div>
+
+<!-- 保持 classic script 與此載入順序：三個檔案共用全域 lexical scope。 -->
+<script src="js/data.js"></script>
+<script src="js/board.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
