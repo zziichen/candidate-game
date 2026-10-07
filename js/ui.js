@@ -3,8 +3,23 @@ let lastMapNode = null;
 const uiCategory = id => visualCategories[id.startsWith('F') ? 'funds' : routeCategory(id) || 'common'];
 const resourceLabels = { support:'支持', funds:'資金', media:'聲量', org:'組織', trust:'信任', controversy:'爭議' };
 
-function candidateBadge(c, extra = '') {
-  return `<span class="candidate-badge ${extra}" style="--candidate-color:${c.tint}" aria-hidden="true">${c.name[0]}<i>✦</i></span>`;
+const portraitMoods = {
+  happy: { label:'喜孜孜', position:'0%' },
+  neutral: { label:'無悲無喜', position:'50%' },
+  nervous: { label:'落後很緊張', position:'100%' }
+};
+// Competition rank gives tied support the same face; never mutates game state.
+function candidateStanding(p) {
+  if (!game.started) return { rank:0, mood:'neutral' };
+  const support = game.players.map(other => other.res.support);
+  const rank = 1 + support.filter(value => value > p.res.support).length;
+  const mood = Math.max(...support) === Math.min(...support) ? 'neutral' : rank <= 2 ? 'happy' : rank <= 4 ? 'neutral' : 'nervous';
+  return { rank, mood };
+}
+function candidateBadge(c, extra = '', mood = 'neutral') {
+  const expression = portraitMoods[mood];
+  const source = new URL(`assets/candidate-${c.id}.webp`,document.baseURI).href;
+  return `<span class="candidate-portrait ${extra}" data-candidate="${c.id}" data-mood="${mood}" role="img" aria-label="${c.name}：${expression.label}" style="--candidate-color:${c.tint};--portrait-url:url('${source}');--portrait-position:${expression.position}"></span>`;
 }
 function renderCandidates() {
   const grid = document.getElementById('candidateGrid');
@@ -39,7 +54,7 @@ function renderPlayerCard() {
   const p = game.human;
   document.body.classList.add('playing');
   document.getElementById('candidateHeading').textContent = '你的競選總部';
-  document.getElementById('playerCard').innerHTML = `<div class="candidate-profile">${candidateBadge(p,'large')}<div><span class="eyebrow">你的競選代表</span><h3>${p.name}<small>${p.title}</small></h3></div></div><div class="position-line">◎ ${nodes[p.node].label}</div>${resourceHtml(p.res)}<p class="eyebrow skill-heading">競選能力</p>${skillsHtml(p)}<div class="strategy-state">動員標記 <b>${p.mobilize}</b><br>連續策略 <b>${p.lastCategory ? visualCategories[p.lastCategory].label : '無'} × ${p.streak}</b>${p.tempSkillCat ? `<br>本回合臨時加成：${visualCategories[p.tempSkillCat].label} +1` : ''}</div>`;
+  document.getElementById('playerCard').innerHTML = `<div class="candidate-profile">${candidateBadge(p,'large',candidateStanding(p).mood)}<div><span class="eyebrow">你的競選代表</span><h3>${p.name}<small>${p.title}</small></h3></div></div><div class="position-line">◎ ${nodes[p.node].label}</div>${resourceHtml(p.res)}<p class="eyebrow skill-heading">競選能力</p>${skillsHtml(p)}<div class="strategy-state">動員標記 <b>${p.mobilize}</b><br>連續策略 <b>${p.lastCategory ? visualCategories[p.lastCategory].label : '無'} × ${p.streak}</b>${p.tempSkillCat ? `<br>本回合臨時加成：${visualCategories[p.tempSkillCat].label} +1` : ''}</div>`;
 }
 function renderActions() {
   const box = document.getElementById('actions'); box.innerHTML = '';
@@ -63,7 +78,10 @@ function renderRanking() {
   const box = document.getElementById('ranking');
   if (!game.started) return;
   const arr = [...game.players].sort((a,b) => b.res.support-a.res.support);
-  box.innerHTML = arr.map((p,i) => `<div class="rank-row ${p.isHuman ? 'me' : ''}"><span class="rank-number">${String(i+1).padStart(2,'0')}</span>${candidateBadge(p)}<span class="rank-person"><b>${p.name}${p.isHuman ? '<small>你</small>' : ''}</b><small>${nodes[p.node].label}</small></span><b class="rank-score">${p.res.support}</b></div>`).join('');
+  box.innerHTML = arr.map(p => {
+    const { rank, mood } = candidateStanding(p);
+    return `<div class="rank-row ${p.isHuman ? 'me' : ''}" data-candidate="${p.id}" data-mood="${mood}"><span class="rank-number">${String(rank).padStart(2,'0')}</span>${candidateBadge(p,'',mood)}<span class="rank-person"><b>${p.name}${p.isHuman ? '<small>你</small>' : ''}</b><small class="rank-mood ${mood}">${portraitMoods[mood].label}</small><small>${nodes[p.node].label}</small></span><b class="rank-score">${p.res.support}</b></div>`;
+  }).join('');
 }
 function tokensAt(id) {
   if (!game.started) return '';
