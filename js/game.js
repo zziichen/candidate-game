@@ -1,6 +1,6 @@
 /**
- * 《候選人！》Alpha 0.42 — runtime / rules / AI / UI
- * 目前仍是單檔原型邏輯拆出的第一階段版本。
+ * 《候選人！》Alpha 0.42 — runtime / rules / AI
+ * UI 已分離至 ui.js；遊戲規則與 AI 保留 Alpha 0.42 行為。
  * 後續建議由 Codex 再拆成 rules.js / ai.js / ui.js / state.js。
  */
 const clamp=(v,min=0,max=99)=>Math.max(min,Math.min(max,v));
@@ -284,26 +284,6 @@ function nextNodeFor(p){
   return null;
 }
 
-function showRouteModal(p,gate,meta){
-  document.getElementById("routeTitle").textContent=meta.title;
-  document.getElementById("routePrompt").textContent=`${p.name} 必須決定下一段競選路線。`;
-  const box=document.getElementById("routeChoices");box.innerHTML="";
-  meta.options.forEach(o=>{
-    const b=document.createElement("button");b.className="route-choice";
-    const cat=routeCategory(o.id);
-    const m=cat?issueStrategyMultiplier(p,cat):1;
-    let hint="";
-    if(game.currentIssue && cat){
-      if(m>=1.15)hint=`<br><span style="color:#86efac;font-weight:800">🔥 當前議題加成 ×${m.toFixed(2)}</span>`;
-      else if(m<.98)hint=`<br><span style="color:#fca5a5;font-weight:800">⚠️ 當前議題不利 ×${m.toFixed(2)}</span>`;
-    }
-    b.innerHTML=`<b>${o.label}</b><span>${o.desc}${hint}</span>`;
-    b.onclick=()=>{p.routeChoices[gate]=o.id;document.getElementById("routeModal").style.display="none";game.waitingRoute=false;continueHumanMove();};
-    box.appendChild(b);
-  });
-  document.getElementById("routeModal").style.display="flex";
-}
-
 function moveOneStep(p,landing=false){
   const nxt=nextNodeFor(p);
   if(!nxt)return false;
@@ -425,130 +405,6 @@ function finishGame(){
   document.getElementById("resultModal").style.display="flex";
 }
 
-function renderCandidates(){
-  const g=document.getElementById("candidateGrid");g.innerHTML="";
-  candidateTemplates.forEach((c,i)=>{
-    const b=document.createElement("button");b.className="candidate-btn"+(i===0?" selected":"");
-    b.dataset.id=c.id;b.innerHTML=`<b>${c.name}</b><span>${c.title}<br>空${c.skills.air} 陸${c.skills.ground} 政${c.skills.policy} 攻${c.skills.attack}</span>`;
-    b.onclick=()=>{if(game.started)return;document.querySelectorAll(".candidate-btn").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");showCandidate(c);};
-    g.appendChild(b);
-  });
-  showCandidate(candidateTemplates[0]);
-}
-function showCandidate(c){
-  const s=c.start;
-  document.getElementById("playerCard").innerHTML=`
-    <div style="margin-top:10px;padding:10px;border:1px solid #475569;border-radius:12px">
-      <b>${c.name}・${c.title}</b><div class="small">「${c.quote}」</div>
-      <div class="stats">
-        <div class="stat">支持 <b>${s.support}</b></div><div class="stat">資金 <b>${s.funds}</b></div>
-        <div class="stat">聲量 <b>${s.media}</b></div><div class="stat">組織 <b>${s.org}</b></div>
-        <div class="stat">信任 <b>${s.trust}</b></div><div class="stat">爭議 <b>${s.controversy}</b></div>
-      </div>
-    </div>`;
-}
-function renderPlayerCard(){
-  if(!game.started)return;
-  const p=game.human,r=p.res;
-  document.getElementById("playerCard").innerHTML=`
-  <div style="margin-top:10px;padding:10px;border:1px solid #475569;border-radius:12px">
-    <b>${p.name}・${p.title}</b><div class="small">位置：${nodes[p.node].label}</div>
-    <div class="stats">
-      <div class="stat">支持 <b>${r.support}</b></div><div class="stat">資金 <b>${r.funds}</b></div>
-      <div class="stat">聲量 <b>${r.media}</b></div><div class="stat">組織 <b>${r.org}</b></div>
-      <div class="stat">信任 <b>${r.trust}</b></div><div class="stat">爭議 <b>${r.controversy}</b></div>
-    </div>
-    <div class="skills">
-      <div class="skill">空軍<br><b>${skillValue(p,"air")}</b></div><div class="skill">陸軍<br><b>${skillValue(p,"ground")}</b></div>
-      <div class="skill">政策<br><b>${skillValue(p,"policy")}</b></div><div class="skill">攻擊<br><b>${skillValue(p,"attack")}</b></div>
-    </div>
-    <div class="small" style="margin-top:7px">動員標記：${p.mobilize}｜連續策略：${p.lastCategory||"無"} × ${p.streak}${p.tempSkillCat?`｜本回合臨時加成：${({air:"空軍",ground:"陸軍",policy:"政策",attack:"攻擊"})[p.tempSkillCat]} +1`:""}</div>
-  </div>`;
-}
-function renderIssuePanel(){
-  const text=document.getElementById("issueText"), heat=document.getElementById("issueHeat"), desc=document.getElementById("issueDesc"), effects=document.getElementById("issueEffects");
-  if(!game.currentIssue){
-    text.textContent="尚未形成焦點";heat.textContent="";desc.textContent="棋盤中段會抽出公共議題，改變策略與停留格收益；單一議題共鳴最高 ×1.50。";
-    effects.innerHTML='<span class="issue-chip">目前尚無策略加成</span>';return;
-  }
-  const i=game.currentIssue;
-  text.textContent=`${i.icon||"📰"} ${i.name}`;
-  heat.textContent="🔥".repeat(i.heat||3);
-  desc.textContent=i.desc;
-  const labels={air:"空軍",ground:"陸軍",policy:"政策",attack:"攻擊"};
-  const dummy=game.human||game.players?.[0];
-  effects.innerHTML=Object.keys(labels).map(cat=>{
-    const m=dummy?issueStrategyMultiplier(dummy,cat):(i.mult[cat]||1);
-    const cls=m>=1.15?"good":m<.98?"bad":"";
-    return `<span class="issue-chip ${cls}">${labels[cat]} ×${m.toFixed(2)}</span>`;
-  }).join("")+`<span class="issue-chip ${issueAttackRisk()>1.25?"bad":""}">攻擊反噬 ×${issueAttackRisk().toFixed(2)}</span>`;
-}
-function renderActions(){
-  const box=document.getElementById("actions");box.innerHTML="";
-  actionDefs.forEach(a=>{
-    const b=document.createElement("button");b.className="action-btn";
-    const names={air:"空軍",ground:"陸軍",policy:"政策",attack:"攻擊"};
-    const m=game.started?issueStrategyMultiplier(game.human,a.cat):1;
-    const risk=a.cat==="attack"&&game.currentIssue?issueAttackRisk():1;
-    let note="";
-    if(game.currentIssue && m>=1.15){b.classList.add("issue-hot");note=`<span class="action-bonus">🔥 ${game.currentIssue.name} 共鳴 ×${m.toFixed(2)}</span>`;}
-    else if(game.currentIssue && m<.98){b.classList.add("issue-risk");note=`<span class="action-risk">⚠️ 議題錯位：效果 ×${m.toFixed(2)}</span>`;}
-    if(a.cat==="attack"&&game.currentIssue&&risk>1.15){b.classList.add("issue-risk");note+=`<span class="action-risk">⚠️ 反噬爭議 ×${risk.toFixed(2)}</span>`;}
-    b.innerHTML=`<span class="category">${names[a.cat]}</span><b>${a.name}</b><span>${a.ap}AP｜${a.cost?`資金${a.cost}｜`:""}難度${a.diff}<br>${a.desc}</span>${note}`;
-    if(!game.started||game.current!==0||game.human.ap<=0||game.human.finished)b.disabled=true;
-    b.onclick=()=>{doAction(game.human,a);render();};
-    box.appendChild(b);
-  });
-}
-function renderRanking(){
-  const box=document.getElementById("ranking");
-  const arr=[...game.players].sort((a,b)=>b.res.support-a.res.support);
-  box.innerHTML=arr.map((p,i)=>`<div class="rank-row ${p.isHuman?"me":""}">
-    <span class="token" style="background:${p.tint}">${i+1}</span>
-    <span>${p.name}<br><span class="small">${nodes[p.node].label}</span></span>
-    <b>${p.res.support}</b>
-  </div>`).join("");
-}
-function tokensAt(id){
-  if(!game.started)return "";
-  return game.players.filter(p=>p.node===id).map(p=>`<span class="token ${p.isHuman?"player":""}" title="${p.name}" style="background:${p.tint}">${p.name[0]}</span>`).join("");
-}
-function nodeHtml(id){
-  return `<div class="${nodes[id].type==="common"?"common-node":"route-node"}"><b>${nodes[id].label}</b><div class="tokens">${tokensAt(id)}</div></div>`;
-}
-function renderBoard(){
-  const b=document.getElementById("board");
-  b.innerHTML=`
-    <div class="stage">${nodeHtml("c0")}${nodeHtml("c1")}${nodeHtml("c2")}</div>
-    <div class="stage"><div class="route-grid">
-      <div class="route"><h4>🔵 空軍線</h4>${["A1","A2","A3"].map(nodeHtml).join("")}</div>
-      <div class="route"><h4>🟢 陸軍線</h4>${["G1","G2","G3","G4"].map(nodeHtml).join("")}</div>
-    </div>${nodeHtml("c3")}${nodeHtml("c4")}</div>
-    <div class="stage"><div class="route-grid">
-      <div class="route"><h4>🟡 政策線</h4>${["P1","P2","P3","P4"].map(nodeHtml).join("")}</div>
-      <div class="route"><h4>💰 募款線</h4>${["F1","F2","F3"].map(nodeHtml).join("")}</div>
-    </div>${nodeHtml("c5")}${nodeHtml("c6")}</div>
-    <div class="stage"><div class="route-grid">
-      <div class="route"><h4>⚪ 正面競選</h4>${["POS1","POS2","POS3","POS4"].map(nodeHtml).join("")}</div>
-      <div class="route"><h4>🔴 負面攻擊</h4>${["NEG1","NEG2","NEG3"].map(nodeHtml).join("")}</div>
-    </div>${nodeHtml("c7")}${nodeHtml("c8")}</div>
-    <div class="stage"><div class="route-grid">
-      <div class="route"><h4>🟣 辯論媒體</h4>${["D1","D2","D3"].map(nodeHtml).join("")}</div>
-      <div class="route"><h4>🟢 地方深耕</h4>${["L1","L2","L3","L4"].map(nodeHtml).join("")}</div>
-    </div>${nodeHtml("c9")}</div>
-    <div class="stage"><div class="route-grid">
-      <div class="route"><h4>🔵 最後空戰</h4>${["B1","B2","B3"].map(nodeHtml).join("")}</div>
-      <div class="route"><h4>🟢 投票動員</h4>${["V1","V2","V3","V4"].map(nodeHtml).join("")}</div>
-    </div>${nodeHtml("c10")}${nodeHtml("c11")}${nodeHtml("c12")}</div>`;
-}
-function renderTurn(){
-  if(!game.started){document.getElementById("turnInfo").textContent="尚未開始";return;}
-  document.getElementById("turnInfo").innerHTML=`第 <b>${game.round}</b> 輪｜行動點 <b>${game.human.ap}</b>｜${game.finishing?"最後一輪":"選戰進行中"}`;
-}
-function render(){renderPlayerCard();renderIssuePanel();renderActions();renderRanking();renderBoard();renderTurn();}
-function addLog(msg,cls=""){
-  const l=document.getElementById("log"),d=document.createElement("div");d.className=cls;d.textContent=msg;l.appendChild(d);l.scrollTop=l.scrollHeight;
-}
 function startGame(){
   const sel=document.querySelector(".candidate-btn.selected")?.dataset.id || "lin";
   const chosen=candidateTemplates.find(c=>c.id===sel);
